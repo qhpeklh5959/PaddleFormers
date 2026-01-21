@@ -81,6 +81,10 @@ def is_valid_image(img):
     return isinstance(img, PIL.Image.Image) or isinstance(img, np.ndarray) or is_paddle_tensor(img)
 
 
+def is_valid_list_of_images(images: list):
+    return images and all(is_valid_image(image) for image in images)
+
+
 def valid_images(imgs):
     # If we have an list of images, make sure every image is valid
     if isinstance(imgs, (list, tuple)):
@@ -134,6 +138,44 @@ def make_list_of_images(images, expected_ndims: int = 3) -> List[ImageInput]:
     raise ValueError(
         "Invalid image type. Expected either PIL.Image.Image, numpy.ndarray, paddle.Tensor " f"but got {type(images)}."
     )
+
+
+def make_flat_list_of_images(
+    images: list[ImageInput] | ImageInput,
+    expected_ndims: int = 3,
+) -> ImageInput:
+    """
+    Ensure that the output is a flat list of images. If the input is a single image, it is converted to a list of length 1.
+    If the input is a nested list of images, it is converted to a flat list of images.
+    Args:
+        images (`Union[list[ImageInput], ImageInput]`):
+            The input image.
+        expected_ndims (`int`, *optional*, defaults to 3):
+            The expected number of dimensions for a single input image.
+    Returns:
+        list: A list of images or a 4d array of images.
+    """
+    # If the input is a nested list of images, we flatten it
+    if (
+        isinstance(images, (list, tuple))
+        and all(isinstance(images_i, (list, tuple)) for images_i in images)
+        and all(is_valid_list_of_images(images_i) or not images_i for images_i in images)
+    ):
+        return [img for img_list in images for img in img_list]
+
+    if isinstance(images, (list, tuple)) and is_valid_list_of_images(images):
+        if isinstance(images[0], PIL.Image.Image) or images[0].ndim == expected_ndims:
+            return images
+        if images[0].ndim == expected_ndims + 1:
+            return [img for img_list in images for img in img_list]
+
+    if is_valid_image(images):
+        if isinstance(images, PIL.Image.Image) or images.ndim == expected_ndims:
+            return [images]
+        if images.ndim == expected_ndims + 1:
+            return list(images)
+
+    raise ValueError(f"Could not make a flat list of images from {images}")
 
 
 def to_numpy_array(img) -> np.ndarray:

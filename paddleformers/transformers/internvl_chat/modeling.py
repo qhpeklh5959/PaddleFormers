@@ -678,7 +678,6 @@ class InternVLChatModel(InternVLChatPretrainedModel):
         self.num_image_token = int((image_size // patch_size) ** 2 * (config.downsample_ratio**2))
         self.downsample_ratio = config.downsample_ratio
         self.ps_version = config.ps_version
-        use_flash_attn = use_flash_attn if has_flash_attn else False
         config.vision_config.use_flash_attn = True if use_flash_attn else False
         config.llm_config._attn_implementation = "sdqa" if use_flash_attn else "eager"
 
