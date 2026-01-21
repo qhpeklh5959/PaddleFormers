@@ -27,7 +27,7 @@ import_structure = {
 if TYPE_CHECKING:
     from .configuration import *
     from .modeling import *
-    from .processing import *
+    from .processor import *
 else:
     sys.modules[__name__] = _LazyModule(
         __name__,
